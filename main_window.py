@@ -5,7 +5,7 @@ QDialog
 from PyQt5.QtGui import QIcon
 
 
-from util import make_x_y, find_value, split_by_week, split_by_year
+from util import make_x_y, find_value, split_by_week, split_by_year, create_annotation
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -21,9 +21,14 @@ class MainWindow(QMainWindow):
 
         menubar = self.menuBar()
         file_menu = menubar.addMenu('Файл')
-        file_action = QAction('Открыть', self)
-        file_action.triggered.connect(self.on_file_open_click)
-        file_menu.addAction(file_action)
+        self.file_action_open = QAction('Открыть', self)
+        self.file_action_open.triggered.connect(self.on_file_open_click)
+        self.file_action_annotation = QAction('Создать аннотацию', self)
+        self.file_action_annotation.setEnabled(False)
+        self.file_action_annotation.triggered.connect(self.on_annotation_click)
+
+        file_menu.addAction(self.file_action_open)
+        file_menu.addAction(self.file_action_annotation)
 
         self.table = QTableWidget()
         self.table.setColumnCount(2)
@@ -60,6 +65,7 @@ class MainWindow(QMainWindow):
         self.buttonXY.clicked.connect(self.split_x_y)
         self.buttonYearsSplit.clicked.connect(self.split_by_years)
         self.buttonWeeksSplit.clicked.connect(self.split_by_weeks)
+
     def on_file_open_click(self):
         self.datasetpaths = QFileDialog.getOpenFileNames(self, 'Выберите файл',filter="*.csv")[0]
         if len(self.datasetpaths) == 0:
@@ -74,7 +80,18 @@ class MainWindow(QMainWindow):
             self.table.setItem(i, 0, QTableWidgetItem(str(line.iloc[0])))
             self.table.setItem(i, 1, QTableWidgetItem(str(line.iloc[1])))
             i+=1
+        self.file_action_annotation.setEnabled(True)
 
+    def on_annotation_click(self):
+        result_folder = QFileDialog.getExistingDirectory(self, caption='Выберите папку для файла аннотации')
+        if result_folder == "":
+            QMessageBox.information(self, "Ошибка!", "Вы не выбрали папку")
+            return
+        if create_annotation.create_annotation(filename=self.datasetpaths[0], result_folder=result_folder):
+            QMessageBox.information(self, "Успех", "Файл создан")
+        else:
+            QMessageBox.information(self, "Ошибка!", "Что-то пошло не так!")
+        
     
     def find_value(self):
         selected_date = self.open_calendar()
@@ -117,30 +134,30 @@ class MainWindow(QMainWindow):
         return None 
     
     def split_x_y(self):
-        resultfolder = QFileDialog.getExistingDirectory(self, caption='Выберите папку для выходных файлов')
-        if resultfolder == "":
+        result_folder = QFileDialog.getExistingDirectory(self, caption='Выберите папку для выходных файлов')
+        if result_folder == "":
             QMessageBox.information(self, "Ошибка!", "Вы не выбрали папку")
             return
-        if make_x_y.make_x_y(filename=self.datasetpaths[0],x_file=resultfolder+"/x.csv", y_file=resultfolder+"/y.csv"):
+        if make_x_y.make_x_y(filename=self.datasetpaths[0],x_file=result_folder+"/x.csv", y_file=result_folder+"/y.csv"):
             QMessageBox.information(self, "Успех", "Файлы созданы")
         else:
             QMessageBox.information(self, "Ошибка!", "Что-то пошло не так!")
         
     def split_by_years(self):
-        resultfolder = QFileDialog.getExistingDirectory(self, caption='Выберите папку для выходных файлов')
-        if resultfolder == "":
+        result_folder = QFileDialog.getExistingDirectory(self, caption='Выберите папку для выходных файлов')
+        if result_folder == "":
             QMessageBox.information(self, "Ошибка!", "Вы не выбрали папку")
             return
-        if split_by_year.split_by_year(filename=self.datasetpaths[0],result_folder=resultfolder):
+        if split_by_year.split_by_year(filename=self.datasetpaths[0],result_folder=result_folder):
             QMessageBox.information(self, "Успех", "Файлы созданы")
         else:
             QMessageBox.information(self, "Ошибка!", "Что-то пошло не так!")
     def split_by_weeks(self):
-        resultfolder = QFileDialog.getExistingDirectory(self, caption='Выберите папку для выходных файлов')
-        if resultfolder == "":
+        result_folder = QFileDialog.getExistingDirectory(self, caption='Выберите папку для выходных файлов')
+        if result_folder == "":
             QMessageBox.information(self, "Ошибка!", "Вы не выбрали папку")
             return
-        if split_by_week.split_by_week(filename=self.datasetpaths[0],result_folder=resultfolder):
+        if split_by_week.split_by_week(filename=self.datasetpaths[0],result_folder=result_folder):
             QMessageBox.information(self, "Успех", "Файлы созданы")
         else:
             QMessageBox.information(self, "Ошибка!", "Что-то пошло не так!")
